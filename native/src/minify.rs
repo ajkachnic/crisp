@@ -1,6 +1,7 @@
 use super::lexer::Lexer;
 use super::token::{Keyword, Operator, Token};
 
+use std::fmt::Display;
 use std::iter::Peekable;
 
 pub struct Minifier<'a> {
@@ -11,6 +12,17 @@ impl<'a> Minifier<'a> {
     pub fn new(lex: Lexer) -> Minifier {
         Minifier {
             lex: lex.peekable(),
+        }
+    }
+
+    fn handle_keyword<T>(value: T, keyword: &Keyword) -> String
+    where
+        T: Display,
+    {
+        match keyword {
+            Keyword::IN => format!("{} ", value),
+            Keyword::INSTANCEOF => format!("{} ", value),
+            _ => format!("{};", value),
         }
     }
 
@@ -30,18 +42,28 @@ impl<'a> Minifier<'a> {
                     Token::Comma => code.push(','),
                     Token::STRING(string) => match self.lex.peek() {
                         Some(Token::Ident(_)) => code.push_str(&format!("{};", string)),
-                        Some(Token::Keyword(_)) => code.push_str(&format!("{};", string)),
-                        _ => code.push_str(&format!("{}", string))
+                        Some(Token::Keyword(keyword)) => {
+                            code.push_str(&Self::handle_keyword(string, keyword))
+                        }
+                        _ => code.push_str(&format!("{}", string)),
                     },
                     Token::NUMBER(number) => match self.lex.peek() {
                         Some(Token::Ident(_)) => {
                             code.push_str(&format!("{};", number));
-                        },
-                        Some(Token::Keyword(_)) => code.push_str(&format!("{};", number)),
-                        _ => code.push_str(&format!("{}", number))
+                        }
+                        Some(Token::Keyword(keyword)) => {
+                            code.push_str(&Self::handle_keyword(number, keyword))
+                        }
+                        _ => code.push_str(&format!("{}", number)),
                     },
 
-                    Token::Ident(value) => code.push_str(&value),
+                    Token::Ident(value) => match self.lex.peek() {
+                        Some(Token::Keyword(keyword)) => {
+                            code.push_str(&Self::handle_keyword(value, keyword))
+                        }
+                        Some(Token::Ident(_)) => code.push_str(&format!("{};", value)),
+                        _ => code.push_str(&value),
+                    },
                     Token::Operator(op) => {
                         let code_value = match op {
                             Operator::Arrow => "=>",
@@ -57,6 +79,7 @@ impl<'a> Minifier<'a> {
                             Operator::BitwiseOrAssign => "|=",
                             Operator::BitwiseRight => ">>",
                             Operator::BitwiseXor => "^",
+                            Operator::Colon => ":",
                             Operator::Equal => "==",
                             Operator::Exponent => "**",
                             Operator::ExponentAssign => "**=",
@@ -93,7 +116,7 @@ impl<'a> Minifier<'a> {
                         Keyword::AWAIT => code.push_str("await "),
                         Keyword::BREAK => code.push_str("break"),
                         Keyword::CASE => code.push_str("case "),
-                        Keyword::CATCH => code.push_str("catch "),
+                        Keyword::CATCH => code.push_str("catch"),
                         Keyword::CLASS => code.push_str("class "),
                         Keyword::CONST => code.push_str("const "),
                         Keyword::CONTINUE => code.push_str("continue "),
@@ -101,7 +124,7 @@ impl<'a> Minifier<'a> {
                         Keyword::DEFAULT => code.push_str("default "),
                         Keyword::DELETE => code.push_str("delete "),
                         Keyword::DO => code.push_str("do "),
-                        Keyword::ELSE => code.push_str("else"),
+                        Keyword::ELSE => code.push_str("else "),
                         Keyword::ENUM => code.push_str("enum "),
                         Keyword::EXPORT => code.push_str("export "),
                         Keyword::EXTENDS => code.push_str("extends "),
@@ -146,17 +169,17 @@ impl<'a> Minifier<'a> {
     fn build_rule_string(&mut self, ch: char) -> String {
         match self.lex.peek() {
             Some(Token::Ident(_)) => {
-              if ch == '}' {
-                return String::from(ch);
-              }
-              format!("{};", ch)
-            },
+                if ch == '}' {
+                    return String::from(ch);
+                }
+                format!("{};", ch)
+            }
             Some(Token::Keyword(_)) => {
-              if ch == '}' {
-                format!("{}", ch);
-              }
-              format!("{};", ch)
-            },
+                if ch == '}' {
+                    return format!("{}", ch);
+                }
+                format!("{};", ch)
+            }
             _ => String::from(ch),
         }
     }

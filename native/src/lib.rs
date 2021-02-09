@@ -1,7 +1,7 @@
 use neon::prelude::*;
 mod lexer;
-mod token;
 mod minify;
+mod token;
 fn minify(mut cx: FunctionContext) -> JsResult<JsString> {
     let input = cx.argument::<JsString>(0)?.value();
     let lex = lexer::Lexer::new(&input);
@@ -11,6 +11,4 @@ fn minify(mut cx: FunctionContext) -> JsResult<JsString> {
     Ok(cx.string(string))
 }
 
-register_module!(mut cx, {
-    cx.export_function("minify", minify)
-});
+register_module!(mut cx, { cx.export_function("minify", minify) });

@@ -1,6 +1,6 @@
 {
   "name": "crispify",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "crisp is a fast, rule-based javascript minifier",
   "main": "lib/index.js",
   "repository": {

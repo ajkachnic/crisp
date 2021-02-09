@@ -11,5 +11,5 @@ The main limitation of `crisp` is that it cannot mangle your code (ex. change lo
 You *should* be able to use crisp using `npx`, like this:
 
 ```sh
-npx @ajkachnic/crisp <files>
+npx crispify <files>
 ```
